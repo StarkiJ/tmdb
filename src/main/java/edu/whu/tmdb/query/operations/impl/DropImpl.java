@@ -76,14 +76,11 @@ public class DropImpl implements Drop {
      */
     private void dropDeputyClassTable(int classId, ArrayList<Integer> deputyClassIdList) {
         // TODO-task4
-        //获取所有代理类表项的列表
-        List<DeputyTableItem> deputyTableList = MemConnect.getDeputyTableList();
-
-        // 遍历删除代理类表项
-        Iterator<DeputyTableItem> iterator = deputyTableList.iterator();
+        //遍历代理类表，删除与源类ID匹配的项，同时收集代理类ID
+        Iterator<DeputyTableItem> iterator = MemConnect.getDeputyTableList().iterator();
         while (iterator.hasNext()) {
             DeputyTableItem item = iterator.next();// 获取代理类表项
-            //如果是源类则将该项的代理类id添加到代理类id列表中再删除，如果是代理类则直接删除
+            //如果是源类，则将该项的代理类id添加到代理类id列表中再删除；如果是代理类，则直接删除
             if (item.originid == classId) {
                 deputyClassIdList.add(item.deputyid);
                 iterator.remove();
@@ -92,10 +89,11 @@ public class DropImpl implements Drop {
             }
         }
 
-        //检查deputyClassIdList是否为空,如果不为空，则遍历其id从内存表中移除对应的项
+        //根据收集的代理类ID，从内存表中移除相应的项
         if (deputyClassIdList.isEmpty()) {
             System.out.println("No deputy classes found (id: " + classId + ")");
         } else {
+            //遍历代理类ID列表，移除内存表中对应的项
             for (Integer deputyid : deputyClassIdList) {
                 MemConnect.getClassTableList().removeIf(item -> item.classid == deputyid);
             }
