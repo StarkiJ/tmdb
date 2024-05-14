@@ -24,11 +24,13 @@ public class DropImpl implements Drop {
         this.memConnect = MemConnect.getInstance(MemManager.getInstance());
     }
 
+    //这个方法实现了Drop接口中的drop方法，接收一个Statement对象，强制转换为Drop类型，然后调用execute方法执行删除操作。
     @Override
     public boolean drop(Statement statement) throws TMDBException {
         return execute((net.sf.jsqlparser.statement.drop.Drop) statement);
     }
 
+    //从Drop语句中提取表名，获取对应的类ID，并调用drop方法删除该类
     public boolean execute(net.sf.jsqlparser.statement.drop.Drop drop) throws TMDBException {
         String tableName = drop.getName().getName();
         int classId = memConnect.getClassId(tableName);
@@ -36,6 +38,7 @@ public class DropImpl implements Drop {
         return true;
     }
 
+    //删除给定类ID的所有相关数据，包括类表、代理类表、双向指针表、切换表和对象表。
     public void drop(int classId) {
         // TODO-task4
         ArrayList<Integer> deputyClassIdList = new ArrayList<>();   // 存储该类对应所有代理类id
@@ -52,44 +55,97 @@ public class DropImpl implements Drop {
 
     /**
      * 给定要删除的class id，删除系统表类表(class table)中的表项
+     *
      * @param classId 要删除的表对应的id
      */
     private void dropClassTable(int classId) {
         // TODO-task4
+        //从内存表中检索所有记录,尝试移除与指定ID匹配的记录,没有匹配的记录则输出信息
+        if (!MemConnect.getClassTableList().removeIf(item -> item.classid == classId)) {
+            System.out.println("No class found (id: " + classId + ")");
+        } else {
+            System.out.println("class dropped (id: " + classId + ")");
+        }
     }
 
     /**
      * 删除系统表中的deputy table，并获取class id对应源类的代理类id
-     * @param classId 源类id
+     *
+     * @param classId           源类id
      * @param deputyClassIdList 作为返回值，源类对应的代理类id列表
      */
     private void dropDeputyClassTable(int classId, ArrayList<Integer> deputyClassIdList) {
         // TODO-task4
+        //获取所有代理类表项的列表
+        List<DeputyTableItem> deputyTableList = MemConnect.getDeputyTableList();
+
+        // 遍历删除代理类表项
+        Iterator<DeputyTableItem> iterator = deputyTableList.iterator();
+        while (iterator.hasNext()) {
+            DeputyTableItem item = iterator.next();// 获取代理类表项
+            //如果是源类则将该项的代理类id添加到代理类id列表中再删除，如果是代理类则直接删除
+            if (item.originid == classId) {
+                deputyClassIdList.add(item.deputyid);
+                iterator.remove();
+            } else if (item.deputyid == classId) {
+                iterator.remove();
+            }
+        }
+
+        //检查deputyClassIdList是否为空,如果不为空，则遍历其id从内存表中移除对应的项
+        if (deputyClassIdList.isEmpty()) {
+            System.out.println("No deputy classes found (id: " + classId + ")");
+        } else {
+            for (Integer deputyid : deputyClassIdList) {
+                MemConnect.getClassTableList().removeIf(item -> item.classid == deputyid);
+            }
+            System.out.println("Deputy class entries dropped (classId: " + classId + ", Deputy IDs: " + deputyClassIdList + ")");
+        }
     }
 
     /**
      * 删除系统表中的BiPointerTable
+     *
      * @param classId 源类id
      */
     private void dropBiPointerTable(int classId) {
         // TODO-task4
+        //尝试从bi指针表中移除与给定classId匹配的项，如果没有则输出信息
+        if (!MemConnect.getBiPointerTableList().removeIf(item -> item.classid == classId || item.deputyid == classId)) {
+            System.out.println("No entries found in BiPointerTable (id: " + classId + ")");
+        } else {
+            System.out.println("Entries dropped from BiPointerTable (id: " + classId + ")");
+        }
     }
 
     /**
      * 删除系统表中的SwitchingTable
+     *
      * @param classId 源类id
      */
     private void dropSwitchingTable(int classId) {
         // TODO-task4
+        //同上
+        if (!MemConnect.getSwitchingTableList().removeIf(item -> item.oriId == classId || item.deputyId == classId)) {
+            System.out.println("No entries found in SwitchingTable (id: " + classId + ")");
+        } else {
+            System.out.println("Entries dropped from SwitchingTable (id: " + classId + ")");
+        }
     }
 
     /**
      * 删除源类具有的所有对象的列表
+     *
      * @param classId 源类id
      */
     private void dropObjectTable(int classId) {
         // TODO-task4
         // 使用MemConnect.getObjectTableList().remove();
+        if (!MemConnect.getObjectTableList().removeIf(item -> item.classid == classId)) {
+            System.out.println("No entries found in ObjectTable (id: " + classId + ")");
+        } else {
+            System.out.println("Entries dropped from ObjectTable (id: " + classId + ")");
+        }
     }
 
 }
