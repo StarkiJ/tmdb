@@ -135,7 +135,7 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
 //            这里是针对selectItem是表达式的判定，a或者a+2或者a+b*c都会被认定为表达式
             if(selectItemList.get(i).getClass().getSimpleName().equals("SelectExpressionItem")){
                 SelectExpressionItem selectItem=(SelectExpressionItem) selectItemList.get(i);
-                //如果有alias 例如a*b as c则需要将输出的getAttrname()改成别名
+                // 如果有alias 例如a*b as c则需要将输出的getAttrname()改成别名
                 if(selectItem.getAlias()!=null){
                     result.getAlias()[i]=selectItem.getAlias().getName();
                     result.getAttrname()[i]=selectItem.getAlias().getName();
@@ -333,18 +333,33 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
                 SelectResult projectResult, TupleList resTupleList, int indexInResult) throws TMDBException {
         // TODO-task5
         SelectExpressionItem selectItem = (SelectExpressionItem) item;
-        // 1.attrName赋值
-
-        // 2.alias赋值
-
-        // 3.resTupleList赋值
-        // ArrayList<String> TableColumn = new ArrayList<>();          // 含有两个元素的列表，结构为[tableName, columnName]
-        // 调用attributeParser();
-        // ArrayList<Object> dataList = (new Formula()).formulaExecute(selectItem.getExpression(), entireResult);  // 对表达式进行解析，获取该列的值
-        // 调用getIndexInEntireResult();   // 找到表达式对应属性在原元组对应的下标
-
-        // 4.剩余属性赋值
-
+        // 赋值
+        String attrName = selectItem.getExpression().toString();
+        // 表达式解析和执行
+        ArrayList<String> TableColumn = new ArrayList<>();              // 含有两个元素的列表，结构为[tableName, columnName]
+        attributeParser(attrName, TableColumn);                         // 调用attributeParser()解析表达式
+        ArrayList<Object> dataList = (new Formula()).formulaExecute(selectItem.getExpression(), entireResult);
+        // 调用getIndexInEntireResult，返回属性在entireResult中的位置/下标
+        int columnIndex = getIndexInEntireResult(entireResult, TableColumn.get(0), TableColumn.get(1));
+        if (columnIndex < 0) {
+            // 找不到对应属性，抛出异常
+            throw new TMDBException(ErrorList.COLUMN_NAME_DOES_NOT_EXIST, TableColumn.get(1));
+        }
+        // 更新project的结果（投影结果）
+        // 如果有alias 例如a*b as c则需要将输出的getAttrname()改成别名。
+        projectResult.getAttrname()[indexInResult] = selectItem.getAlias() != null ? selectItem.getAlias().getName() : attrName;
+        projectResult.getAlias()[indexInResult] = selectItem.getAlias() != null ? selectItem.getAlias().getName() : null;
+        projectResult.getAttrid()[indexInResult] = indexInResult;
+        projectResult.getType()[indexInResult] = entireResult.getType()[columnIndex];
+        projectResult.getClassName()[indexInResult] = entireResult.getClassName()[columnIndex];
+        // 将查询结果插入resTupleList
+        for (int i = 0; i < resTupleList.tuplelist.size(); ++i) {
+            resTupleList.tuplelist.get(i).tupleSize = resTupleList.tuplelist.get(i).tuple.length;
+            resTupleList.tuplelist.get(i).tuple[indexInResult] = dataList.get(i);
+            resTupleList.tuplelist.get(i).tupleIds[indexInResult] = entireResult.getTpl().tuplelist.get(i).tupleIds[columnIndex];
+            resTupleList.tuplelist.get(i).tupleId = entireResult.getTpl().tuplelist.get(i).tupleId;
+            resTupleList.tuplelist.get(i).classId = entireResult.getTpl().tuplelist.get(i).classId;
+        }
     }
 
     /**
