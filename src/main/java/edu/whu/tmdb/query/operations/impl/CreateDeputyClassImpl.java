@@ -68,15 +68,43 @@ public class CreateDeputyClassImpl implements CreateDeputyClass {
      */
     private int createDeputyClass(String deputyClassName, SelectResult selectResult, int deputyRule) throws TMDBException {
         // TODO-task3
-        // 遍历selectResult
+        // 1.生成新的classId
+        MemConnect.getClassTable().maxid++;
+        int classId = MemConnect.getClassTable().maxid;//类ID
 
-            // 1.新建classTableItem
-            // 使用MemConnect.getClassTableList().add()
+        int attrNum=selectResult.getAttrid().length;//类属性总个数
+        int oriId;//源类ID
+        int oriAttrId;//源类属性ID
+        String attrName;//当前属性名
+        String attrType;//当前属性类型
+        String oriAttrName;//源类属性名
 
-            // 2.新建switchingTableItem
-            // 使用MemConnect.getSwitchingTableList().add()
+        // 2.遍历selectResult，创建ClassTableItem并添加到ClassTableList
+        for (int i = 0; i < attrNum; i++) {
 
-        return -1;
+            attrName = selectResult.getAttrname()[i];//当前属性名
+            attrType = selectResult.getType()[i];//当前属性类型
+
+            //（类名，类ID，类属性总个数，当前属性ID，当前属性名，当前属性类型，源类属性，alias）
+            ClassTableItem classTableItem = new ClassTableItem(deputyClassName,classId,attrNum,
+                    i,attrName,attrType, "","");
+
+            MemConnect.getClassTableList().add(classTableItem);
+
+            // 3.创建SwitchingTableItem并添加到SwitchingTableList
+            oriId=memConnect.getClassId(selectResult.getClassName()[i]);
+            oriAttrId=selectResult.getAttrid()[i];
+            oriAttrName=selectResult.getAttrname()[i];
+
+            //（源类ID，源类属性ID，源类属性名称，代理类ID，代理类属性ID，代理类属性名称，代理规则）
+            SwitchingTableItem switchingTableItem = new SwitchingTableItem(oriId,oriAttrId,oriAttrName,
+                    classId,i, attrName,Integer.toString(deputyRule));//将int转变成string
+
+            MemConnect.getSwitchingTableList().add(switchingTableItem);
+        }
+        return classId;
+
+        //return -1;
     }
 
     /**
@@ -88,6 +116,12 @@ public class CreateDeputyClassImpl implements CreateDeputyClass {
     public void createDeputyTableItem(String[] classNames, int deputyType, int deputyId) throws TMDBException {
         // TODO-task3
         // 使用MemConnect.getDeputyTableList().add()
+        HashSet<String> oriNames = Arrays.stream(classNames).collect(Collectors.toCollection(HashSet::new));//去除重复元素
+        for (String className : oriNames) {
+            int classId = memConnect.getClassId(className);
+            DeputyTableItem deputyTableItem = new DeputyTableItem(classId,deputyId,new String[]{Integer.toString(deputyType)});//int to string to string[]
+            MemConnect.getDeputyTableList().add(deputyTableItem);
+        }
     }
 
     /**
@@ -102,6 +136,21 @@ public class CreateDeputyClassImpl implements CreateDeputyClass {
         // 可调用getOriginClass(selectResult);
 
         // 使用MemConnect.getBiPointerTableList().add()插入BiPointerTable
+        InsertImpl insert = new InsertImpl();
+        List<String> columns= Arrays.asList(selectResult.getAttrname());//将返回的字符串数组转换为列表
+        for (Tuple tuple : selectResult.getTpl().tuplelist) {
+            //void execute(String tableName, List<String> columns, TupleList tupleList)
+            int deputyTupleId = insert.execute(deputyId, columns, new Tuple(tuple.tuple));//代理类对象ID
+            HashSet<Integer> origin = getOriginClass(selectResult);//去除重复元素
+            for(int ori:origin) {
+                // 插入新的BiPointerTableItem
+                int oriId = memConnect.getClassId(selectResult.getClassName()[ori]);//源类ID
+                int oriTupleId = tuple.tupleIds[ori];//源类对象ID
+                //(源类ID，源类对象ID，代理类ID，代理对象ID）
+                BiPointerTableItem biPointerTableItem = new BiPointerTableItem(oriId, oriTupleId, deputyId, deputyTupleId);
+                MemConnect.getBiPointerTableList().add(biPointerTableItem);
+            }
+        }
     }
 
     /**

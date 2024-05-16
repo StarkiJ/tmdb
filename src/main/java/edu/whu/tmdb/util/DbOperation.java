@@ -40,7 +40,7 @@ public class DbOperation {
      */
     public static void resetDB() {
         // 仓库路径
-        String repositoryPath = "D:\\cs\\JavaProject\\TMDB";
+        String repositoryPath = "D:\\github\\tmdb";
 
         // 子目录路径
         String sysPath = repositoryPath + File.separator + "data\\sys";
@@ -78,17 +78,40 @@ public class DbOperation {
 
     public static void showBiPointerTable() {
         // TODO-task2
+        List<BiPointerTableItem> biPointerTableItems = MemConnect.getBiPointerTableList();
+        System.out.println("|class id           |object id          |deputy id          |deputy object id   |");
+        for (BiPointerTableItem item : biPointerTableItems) {
+            System.out.printf("%-20s%-20s%-20s%-20s\n",
+                    item.classid, item.objectid, item.deputyid, item.deputyobjectid);
+        }
     }
 
     public static void showClassTable() {
         // TODO-task2
+        List<ClassTableItem> classTableItems = MemConnect.getClassTableList();
+        System.out.println("|class name         |class id           |attribute name     |attribute id       |attribute type     |");
+        for (ClassTableItem item : classTableItems) {
+            System.out.printf("%-20s%-20s%-20s%-20s%-20s\n",
+                    item.classname, item.classid, item.attrname, item.attrid, item.attrtype);
+        }
     }
 
     public static void showDeputyTable() {
         // TODO-task2
+        List<DeputyTableItem> deputyTableItems = MemConnect.getDeputyTableList();
+        System.out.println("|origin class id    |deputy class id    |");
+        for (DeputyTableItem item : deputyTableItems) {
+            System.out.printf("%-20s%-20s\n", item.originid, item.deputyid);
+        }
     }
 
     public static void showSwitchingTable() {
         // TODO-task2
+        List<SwitchingTableItem> switchingTableItems = MemConnect.getSwitchingTableList();
+        System.out.println("|origin class id    |origin attribute id|origin attribute name|deputy class id    |deputy attribute id|deputy attribute name|");
+        for (SwitchingTableItem item : switchingTableItems) {
+            System.out.printf("%-20s%-20s%-20s%-20s%-20s%-20s\n",
+                    item.oriId, item.oriAttrid, item.oriAttr, item.deputyId, item.deputyAttrId, item.deputyAttr);
+        }
     }
 }
