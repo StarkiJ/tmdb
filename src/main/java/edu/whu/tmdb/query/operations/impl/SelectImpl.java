@@ -102,6 +102,20 @@ public class SelectImpl implements edu.whu.tmdb.query.operations.Select {
 
     private SelectResult limit(int limit,SelectResult selectResult) {
         // TODO-task9
+
+        // limit应为正整数
+        if (limit <= 0){
+            throw  new IllegalArgumentException();
+        }
+
+        List<Tuple> originalResult = selectResult.getTpl().tuplelist;
+        List<Tuple> finalTuple = originalResult.subList(0, Math.min(limit, originalResult.size()));
+
+        TupleList finalTupleList = new TupleList();
+        finalTupleList.tuplelist = finalTuple;
+        finalTupleList.tuplenum = finalTuple.size();
+        selectResult.setTpl(finalTupleList);
+
         return selectResult;
     }
 
