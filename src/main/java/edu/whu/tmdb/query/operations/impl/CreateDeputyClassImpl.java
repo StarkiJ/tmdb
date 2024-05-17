@@ -85,9 +85,9 @@ public class CreateDeputyClassImpl implements CreateDeputyClass {
             attrName = selectResult.getAttrname()[i];//当前属性名
             attrType = selectResult.getType()[i];//当前属性类型
 
-            //（类名，类ID，类属性总个数，当前属性ID，当前属性名，当前属性类型，源类属性，alias）
+            //（类名，类ID，类属性总个数，当前属性ID，当前属性名，当前属性类型，类属性，alias）
             ClassTableItem classTableItem = new ClassTableItem(deputyClassName,classId,attrNum,
-                    i,attrName,attrType, "","");
+                    i,attrName,attrType, "2","");//1为源类2表示代理类From ClassTyepe.java
 
             MemConnect.getClassTableList().add(classTableItem);
 
