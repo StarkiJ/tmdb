@@ -40,7 +40,7 @@ public class DbOperation {
      */
     public static void resetDB() {
         // 仓库路径
-        String repositoryPath = "D:\\github\\tmdb";
+        String repositoryPath = "D:\\code\\JAVA\\tmdb";
 
         // 子目录路径
         String sysPath = repositoryPath + File.separator + "data\\sys";
